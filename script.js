@@ -470,5 +470,35 @@
 
 		// first render
 		render();
+
+		// Auto-connect and enable realtime if config present
+		(function autoConnectIfConfigured() {
+			try {
+				const conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+				if (conf && conf.apiKey && conf.authDomain && conf.projectId && conf.docPath) {
+					// Ensure app is initialized
+					if (!firebase.apps?.length) {
+						firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
+					}
+					connectFirebase(conf);
+					fbEnableRealtime();
+					fbPull();
+				}
+			} catch (e) { /* ignore */ }
+		})();
+
+		// Finalize Google redirect sign-in if we came back from provider
+		(function finalizeGoogleRedirect() {
+			try {
+				if (!firebase?.apps?.length) return;
+				firebase.auth().getRedirectResult().then((result) => {
+					if (result && result.user) {
+						updateFbStatus('Autentificat (Google)');
+					}
+				}).catch((e) => {
+					console.warn('Redirect sign-in error', e);
+				});
+			} catch {}
+		})();
 	});
 })();
