@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Manuale and Teme as separate collections with one doc per item
+    match /manuals/{manualId} {
+      allow read: if true;              // anyone can read
+      allow create: if true;            // anyone can publish (add)
+      allow update, delete: if request.auth != null
+        && request.auth.token.email == 'rghita304@gmail.com'; // only owner can edit/delete
+    }
+    match /homework/{temaId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null
+        && request.auth.token.email == 'rghita304@gmail.com';
+    }
+  }
+}

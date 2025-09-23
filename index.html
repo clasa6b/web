@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuale Digitale - Clasa 6B</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-book-open"></i>
+                <h1>Manuale Digitale</h1>
+            </div>
+            <nav class="nav">
+                <ul>
+                    <li><a href="#home" class="nav-link active">Acasă</a></li>
+                    <li><a href="#manuale" class="nav-link">Manuale</a></li>
+                    <li><a href="#teme" class="nav-link">Teme Clasa 6B</a></li>
+                </ul>
+            </nav>
+            <div class="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="header-actions">
+                <button id="darkModeToggle" class="icon-btn" title="Comută modul închis">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="exportBtn" class="icon-btn" title="Exportă date">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button id="importBtn" class="icon-btn" title="Importă date">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <button id="shareLinkBtn" class="icon-btn" title="Generează link partajabil">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                <input id="importFileInput" type="file" accept="application/json" style="display:none" />
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <section id="home" class="section active">
+            <div class="container">
+                <div class="hero">
+                    <h2>Bun venit la Manualele Digitale pentru Clasa 6B</h2>
+                    <p>Accesează manualele digitale și temele pentru toate materiile din clasa a 6-a B</p>
+                    <div class="hero-buttons">
+                        <a href="#manuale" class="btn btn-primary">Vezi Manualele</a>
+                        <a href="#teme" class="btn btn-secondary">Vezi Temele de azi</a>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <i class="fas fa-book"></i>
+                        <h3>8</h3>
+                        <p>Manuale Digitale</p>
+                    </div>
+                    </div>
+                </div>
+                <div class="manuale-toolbar" style="margin-top:16px">
+                    <h3 style="margin:0 0 8px">Sincronizare online (Firebase – opțional)</h3>
+                    <div id="ownerOnlyPanel" class="hidden">
+                        <form id="firebaseForm" class="inline-form">
+                            <input type="text" id="fbApiKey" placeholder="apiKey">
+                            <input type="text" id="fbAuthDomain" placeholder="authDomain">
+                            <input type="text" id="fbProjectId" placeholder="projectId">
+                            <input type="text" id="fbDocPath" placeholder="colecție bază (ex: clasa6b)">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-plug"></i> Conectează</button>
+                            <button type="button" id="fbEnable" class="btn"><i class="fas fa-bolt"></i> Activează realtime</button>
+                            <button type="button" id="fbDisable" class="btn"><i class="fas fa-power-off"></i> Dezactivează</button>
+                            <button type="button" id="fbPull" class="btn"><i class="fas fa-cloud-download-alt"></i> Pull</button>
+                            <button type="button" id="fbPush" class="btn"><i class="fas fa-cloud-upload-alt"></i> Push</button>
+                        </form>
+                    </div>
+                    <div class="inline-form">
+                        <input type="email" id="ownerEmail" placeholder="Owner email (pentru ștergere)">
+                        <input type="password" id="ownerPassword" placeholder="Parolă">
+                        <button type="button" id="ownerLogin" class="btn"><i class="fas fa-user-lock"></i> Login Owner</button>
+                        <button type="button" id="ownerLogout" class="btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>
+                    <p class="section-subtitle" id="fbStatus">Neconectat</p>
+                    <p class="section-subtitle">Publicul poate publica fără login. Doar owner-ul autentificat poate șterge.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="manuale" class="section">
+            <div class="container">
+                <h2>Manuale Digitale</h2>
+                <p class="section-subtitle">Accesează manualele pentru toate materiile din clasa a 6-a</p>
+                <div class="manuale-toolbar">
+                    <form id="manualForm" class="inline-form">
+                        <input type="text" id="manualSubject" placeholder="Materia (ex: Matematică)" required>
+                        <input type="url" id="manualUrl" placeholder="Link manual (PDF sau site)" required>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adaugă</button>
+                    </form>
+                    <input type="search" id="manualSearch" placeholder="Caută manuale...">
+                </div>
+                <div id="manualeList" class="manuale-grid"></div>
+            </div>
+        </section>
+
+        <section id="teme" class="section">
+            <div class="container">
+                <h2>Teme pentru Clasa 6B</h2>
+                <p class="section-subtitle">Urmărește temele și activitățile pentru clasa 6B</p>
+                <div class="teme-toolbar">
+                    <form id="temaForm" class="inline-form">
+                        <input type="text" id="temaSubject" placeholder="Materia" required>
+                        <input type="text" id="temaTitle" placeholder="Titlul/Descriere scurtă" required>
+                        <input type="date" id="temaDue" required>
+                        <select id="temaPriority" required>
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                        <input type="text" id="temaTeacher" placeholder="Profesor (opțional)">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adaugă</button>
+                    </form>
+                    <div class="filters-group">
+                        <button class="filter-btn active" data-filter="all">Toate</button>
+                        <button class="filter-btn" data-filter="urgent">Urgente</button>
+                        <button class="filter-btn" data-filter="this-week">Săptămâna aceasta</button>
+                        <button class="filter-btn" data-filter="next-week">Săptămâna viitoare</button>
+                        <input type="search" id="temaSearch" placeholder="Caută teme...">
+                    </div>
+                </div>
+                <div id="temeList" class="teme-list"></div>
+            </div>
+        </section>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <span id="year"></span> Manuale Digitale - Clasa 6B. Toate drepturile rezervate.</p>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyC6gvd_8lSFbLcPw5iMHLJAeUSEf-g4Rqg",
+          authDomain: "clasa6bweb.firebaseapp.com",
+          projectId: "clasa6bweb",
+          storageBucket: "clasa6bweb.firebasestorage.app",
+          messagingSenderId: "806719482890",
+          appId: "1:806719482890:web:8070d9df9820b990df43f3",
+          measurementId: "G-DXQH1EGQPE"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+      </script>
+</body>
+</html>
