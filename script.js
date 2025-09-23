@@ -34,6 +34,7 @@
 	const temaSearch = () => document.getElementById('temaSearch');
 	const temeList = () => document.getElementById('temeList');
 	const filterBtns = () => document.querySelectorAll('.filter-btn');
+	const temaStudent = () => document.getElementById('temaStudent');
 
 	/** Utils **/
 	function readData() {
@@ -143,7 +144,7 @@
 					<span class="tema-priority ${t.priority === 'urgent' ? 'urgent' : 'normal'}">${t.priority === 'urgent' ? 'Urgent' : 'Normal'}</span>
 				</div>
 				<div class="tema-content">
-					<p><strong>Termen:</strong> ${formatDateISO(t.due)} ${t.teacher ? ' • ' + escapeHtml(t.teacher) : ''}</p>
+					<p><strong>Termen:</strong> ${formatDateISO(t.due)} ${t.teacher ? ' • ' + escapeHtml(t.teacher) : ''} ${t.student ? ' • ' + escapeHtml(t.student) : ''}</p>
 				</div>
 				<div class="tema-actions">
 					<button class="btn btn-small" data-action="edit">Editează</button>
@@ -206,9 +207,10 @@
 		const due = temaDue().value;
 		const priority = temaPriority().value;
 		const teacher = temaTeacher().value.trim();
-		if (!subject || !title || !due) { alert('Completează materia, titlul și termenul.'); return; }
+		const student = (temaStudent()?.value || '').trim();
+		if (!subject || !title || !due || !student) { alert('Completează materia, titlul, termenul și numele elevului.'); return; }
 		const data = readData();
-		data.homework.push({ id: uid(), subject, title, due, priority, teacher });
+		data.homework.push({ id: uid(), subject, title, due, priority, teacher, student });
 		writeData(data);
 		temaForm().reset();
 		renderTeme(data);
@@ -221,8 +223,9 @@
 		const due = prompt('Termen (YYYY-MM-DD)', t.due); if (due === null) return;
 		const priority = prompt('Prioritate (normal/urgent)', t.priority) || 'normal';
 		const teacher = prompt('Profesor (opțional)', t.teacher || '') || '';
-		if (!subject.trim() || !title.trim() || !due.trim()) { alert('Date invalide.'); return; }
-		t.subject = subject.trim(); t.title = title.trim(); t.due = due.trim(); t.priority = priority === 'urgent' ? 'urgent' : 'normal'; t.teacher = teacher.trim();
+		const student = prompt('Nume elev', t.student || ''); if (student === null) return;
+		if (!subject.trim() || !title.trim() || !due.trim() || !student.trim()) { alert('Date invalide.'); return; }
+		t.subject = subject.trim(); t.title = title.trim(); t.due = due.trim(); t.priority = priority === 'urgent' ? 'urgent' : 'normal'; t.teacher = teacher.trim(); t.student = student.trim();
 		writeData(data); renderTeme(data);
 	}
 	function onDeleteTema(id) {
@@ -443,7 +446,13 @@
 					}
 				}
 				const provider = new firebase.auth.GoogleAuthProvider();
-				await firebase.auth().signInWithPopup(provider);
+				try {
+					await firebase.auth().signInWithPopup(provider);
+				} catch (e) {
+					// fallback to redirect (e.g., popup blocked)
+					await firebase.auth().signInWithRedirect(provider);
+					return;
+				}
 				updateFbStatus('Autentificat (Google)');
 			} catch (e) { console.error(e); alert('Google Sign-in eșuat.'); }
 		});
