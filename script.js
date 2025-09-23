@@ -411,18 +411,7 @@
 			const password = document.getElementById('ownerPassword')?.value;
 			if (!email || !password) { alert('Completează email și parolă.'); return; }
 			try {
-				let conf = readFbConf();
-				if (!firebase.apps?.length) {
-					if (!conf) {
-						const apiKey = prompt('Introdu apiKey Firebase');
-						const authDomain = prompt('Introdu authDomain Firebase (ex: proiectul-tau.firebaseapp.com)');
-						const projectId = prompt('Introdu projectId Firebase');
-						if (!apiKey || !authDomain || !projectId) { alert('Config incomplet.'); return; }
-						conf = { apiKey: apiKey.trim(), authDomain: authDomain.trim(), projectId: projectId.trim(), docPath: (conf?.docPath || '') };
-						writeFbConf(conf);
-					}
-					firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
-				}
+				if (!firebase.apps?.length) { alert('Configurează Firebase (apiKey/authDomain/projectId) o singură dată în index.html (window.FB_CONF).'); return; }
 				await firebase.auth().signInWithEmailAndPassword(email, password);
 				updateFbStatus('Autentificat');
 			} catch (e) { console.error(e); alert('Login eșuat.'); }
@@ -433,6 +422,17 @@
 		firebase.auth?.().onAuthStateChanged?.(user => {
 			toggleOwnerUI(user);
 		});
+
+		// Bootstrap Firebase app early if possible
+		(function initFirebaseEarly() {
+			try {
+				if (firebase?.apps?.length) return;
+				let conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+				if (conf && conf.apiKey && conf.authDomain && conf.projectId) {
+					firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
+				}
+			} catch {}
+		})();
 
 		// first render
 		render();
