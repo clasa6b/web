@@ -411,7 +411,15 @@
 			const password = document.getElementById('ownerPassword')?.value;
 			if (!email || !password) { alert('Completează email și parolă.'); return; }
 			try {
-				if (!firebase.apps?.length) { alert('Configurează Firebase (apiKey/authDomain/projectId) o singură dată în index.html (window.FB_CONF).'); return; }
+				if (!firebase.apps?.length) {
+					let conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+					if (conf && conf.apiKey && conf.authDomain && conf.projectId) {
+						firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
+					} else {
+						alert('Setează odată config-ul în `window.FB_CONF` din index.html.');
+						return;
+					}
+				}
 				await firebase.auth().signInWithEmailAndPassword(email, password);
 				updateFbStatus('Autentificat');
 			} catch (e) { console.error(e); alert('Login eșuat.'); }
@@ -421,6 +429,23 @@
 		});
 		firebase.auth?.().onAuthStateChanged?.(user => {
 			toggleOwnerUI(user);
+		});
+
+		document.getElementById('ownerGoogle')?.addEventListener('click', async () => {
+			try {
+				if (!firebase.apps?.length) {
+					let conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+					if (conf && conf.apiKey && conf.authDomain && conf.projectId) {
+						firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
+					} else {
+						alert('Setează odată config-ul în `window.FB_CONF` din index.html.');
+						return;
+					}
+				}
+				const provider = new firebase.auth.GoogleAuthProvider();
+				await firebase.auth().signInWithPopup(provider);
+				updateFbStatus('Autentificat (Google)');
+			} catch (e) { console.error(e); alert('Google Sign-in eșuat.'); }
 		});
 
 		// Bootstrap Firebase app early if possible
