@@ -383,7 +383,7 @@
 	let chatUnsub = null;
 	function connectChatRealtime() {
 		try {
-			const conf = (window.FB_CONF && window.FB_CONF.docPath) ? window.FB_CONF : readFbConf();
+			const conf = getEffectiveConf();
 			if (!conf?.docPath) return;
 			if (!firebase?.apps?.length) return;
 			const base = conf.docPath.split('/')[0];
@@ -405,7 +405,7 @@
 	}
 	async function sendChatMessage(text) {
 		const user = readChatUser().trim() || 'Anonim';
-		const conf = (window.FB_CONF && window.FB_CONF.docPath) ? window.FB_CONF : readFbConf();
+		const conf = getEffectiveConf();
 		if (!firebase?.apps?.length || !conf?.docPath) { alert('Chatul nu este conectat.'); return; }
 		const base = conf.docPath.split('/')[0];
 		await firebase.firestore().collection(base + '_chat').add({
@@ -413,6 +413,19 @@
 			user,
 			ts: firebase.firestore.FieldValue.serverTimestamp(),
 		});
+	}
+
+	// Default Firebase config fallback (used if window.FB_CONF and saved config are absent)
+	const DEFAULT_FB_CONF = {
+		apiKey: "AIzaSyC6gvd_8lSFbLcPw5iMHLJAeUSEf-g4Rqg",
+		authDomain: "clasa6bweb.firebaseapp.com",
+		projectId: "clasa6bweb",
+		docPath: "clasa6b/data"
+	};
+	function getEffectiveConf() {
+		const inlineConf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : null;
+		const savedConf = readFbConf();
+		return inlineConf || savedConf || DEFAULT_FB_CONF;
 	}
 
 	// Chat UI bindings
@@ -493,20 +506,16 @@
 		const fbProjectId = document.getElementById('fbProjectId');
 		const fbDocPath = document.getElementById('fbDocPath');
 		const saved = readFbConf();
-		if (saved) {
-			fbApiKey && (fbApiKey.value = saved.apiKey || '');
-			fbAuthDomain && (fbAuthDomain.value = saved.authDomain || '');
-			fbProjectId && (fbProjectId.value = saved.projectId || '');
-			fbDocPath && (fbDocPath.value = saved.docPath || '');
+		const pref = getEffectiveConf() || saved;
+		if (pref) {
+			fbApiKey && (fbApiKey.value = pref.apiKey || '');
+			fbAuthDomain && (fbAuthDomain.value = pref.authDomain || '');
+			fbProjectId && (fbProjectId.value = pref.projectId || '');
+			fbDocPath && (fbDocPath.value = pref.docPath || '');
 		}
 		fbForm?.addEventListener('submit', (e) => {
 			e.preventDefault();
-			connectFirebase({
-				apiKey: fbApiKey?.value.trim(),
-				authDomain: fbAuthDomain?.value.trim(),
-				projectId: fbProjectId?.value.trim(),
-				docPath: fbDocPath?.value.trim(),
-			});
+			connectFirebase({ apiKey: fbApiKey?.value.trim(), authDomain: fbAuthDomain?.value.trim(), projectId: fbProjectId?.value.trim(), docPath: fbDocPath?.value.trim() });
 		});
 		document.getElementById('fbEnable')?.addEventListener('click', fbEnableRealtime);
 		document.getElementById('fbDisable')?.addEventListener('click', fbDisableRealtime);
@@ -524,7 +533,7 @@
 			if (!email || !password) { alert('Completează email și parolă.'); return; }
 			try {
 				if (!firebase.apps?.length) {
-					let conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+					const conf = getEffectiveConf();
 					if (conf && conf.apiKey && conf.authDomain && conf.projectId) {
 						firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
 					} else {
@@ -546,7 +555,7 @@
 		document.getElementById('ownerGoogle')?.addEventListener('click', async () => {
 			try {
 				if (!firebase.apps?.length) {
-					let conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+					const conf = getEffectiveConf();
 					if (conf && conf.apiKey && conf.authDomain && conf.projectId) {
 						firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
 					} else {
@@ -570,7 +579,7 @@
 		(function initFirebaseEarly() {
 			try {
 				if (firebase?.apps?.length) return;
-				let conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+				const conf = getEffectiveConf();
 				if (conf && conf.apiKey && conf.authDomain && conf.projectId) {
 					firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
 				}
@@ -583,7 +592,7 @@
 		// Auto-connect and enable realtime if config present
 		(function autoConnectIfConfigured() {
 			try {
-				const conf = (window.FB_CONF && window.FB_CONF.apiKey) ? window.FB_CONF : readFbConf();
+				const conf = getEffectiveConf();
 				if (conf && conf.apiKey && conf.authDomain && conf.projectId && conf.docPath) {
 					// Ensure app is initialized
 					if (!firebase.apps?.length) {
