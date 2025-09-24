@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manuale Digitale - Clasa 6B</title>
+    <title>Site-ul clasei. - Clasa 6B</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -19,6 +19,7 @@
                     <li><a href="#home" class="nav-link active">Acasă</a></li>
                     <li><a href="#manuale" class="nav-link">Manuale</a></li>
                     <li><a href="#teme" class="nav-link">Teme Clasa 6B</a></li>
+                    <li><a href="#chat" class="nav-link">Chat</a></li>
                 </ul>
             </nav>
             <div class="mobile-menu-toggle">
@@ -121,6 +122,8 @@
                         </select>
                         <input type="text" id="temaTeacher" placeholder="Profesor (opțional)">
                         <input type="text" id="temaStudent" placeholder="Nume elev" required>
+                        <input type="url" id="temaImageUrl" placeholder="Link imagine (opțional)">
+                        <input type="file" id="temaImages" accept="image/*" multiple>
                         <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adaugă</button>
                     </form>
                     <div class="filters-group">
@@ -135,17 +138,29 @@
             </div>
         </section>
 
+        <section id="chat" class="section">
+            <div class="container">
+                <h2>Chat Clasa 6B</h2>
+                <p class="section-subtitle">Introduceți un nume/username pentru a participa la chat</p>
+                <div class="teme-toolbar">
+                    <div class="inline-form">
+                        <input type="text" id="chatUsername" placeholder="Nume sau username(obligatoriu)" required>
+                        <button type="button" id="chatSaveName" class="btn btn-primary"><i class="fas fa-user-check"></i> Salvează numele</button>
+                    </div>
+                </div>
+                <div id="chatMessages" class="chat-messages"></div>
+                <form id="chatForm" class="inline-form">
+                    <input type="text" id="chatInput" placeholder="Scrie un mesaj..." required>
+                    <button type="submit" id="chatSend" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Trimite</button>
+                </form>
+            </div>
+        </section>
+
                     </div>
                 </div>
             </div>
         </section>
     </main>
-
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; <span id="year"></span> Manuale Digitale - Clasa 6B. Toate drepturile rezervate.</p>
-        </div>
-    </footer>
 
     <script>
       // Optional: set your Firebase config once here so login doesn't ask for keys

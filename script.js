@@ -35,6 +35,8 @@
 	const temeList = () => document.getElementById('temeList');
 	const filterBtns = () => document.querySelectorAll('.filter-btn');
 	const temaStudent = () => document.getElementById('temaStudent');
+	const temaImageUrl = () => document.getElementById('temaImageUrl');
+	const temaImagesInput = () => document.getElementById('temaImages');
 
 	/** Utils **/
 	function readData() {
@@ -145,6 +147,7 @@
 				</div>
 				<div class="tema-content">
 					<p><strong>Termen:</strong> ${formatDateISO(t.due)} ${t.teacher ? ' • ' + escapeHtml(t.teacher) : ''} ${t.student ? ' • ' + escapeHtml(t.student) : ''}</p>
+					${Array.isArray(t.images) && t.images.length ? `<div class="tema-images">${t.images.map(u => `<img src="${u}" alt="foto">`).join('')}</div>` : ''}
 				</div>
 				<div class="tema-actions">
 					<button class="btn btn-small" data-action="edit">Editează</button>
@@ -208,12 +211,26 @@
 		const priority = temaPriority().value;
 		const teacher = temaTeacher().value.trim();
 		const student = (temaStudent()?.value || '').trim();
+		const imgUrl = (temaImageUrl()?.value || '').trim();
+		const files = Array.from(temaImagesInput()?.files || []);
 		if (!subject || !title || !due || !student) { alert('Completează materia, titlul, termenul și numele elevului.'); return; }
 		const data = readData();
-		data.homework.push({ id: uid(), subject, title, due, priority, teacher, student });
-		writeData(data);
-		temaForm().reset();
-		renderTeme(data);
+		// convert files to data URLs for local preview/storage
+		if (files.length) {
+			Promise.all(files.slice(0,6).map(f => fileToDataUrl(f))).then(urls => {
+				const images = [...(imgUrl ? [imgUrl] : []), ...urls];
+				data.homework.push({ id: uid(), subject, title, due, priority, teacher, student, images });
+				writeData(data);
+				temaForm().reset();
+				renderTeme(data);
+			});
+		} else {
+			const images = imgUrl ? [imgUrl] : [];
+			data.homework.push({ id: uid(), subject, title, due, priority, teacher, student, images });
+			writeData(data);
+			temaForm().reset();
+			renderTeme(data);
+		}
 	}
 	function onEditTema(id) {
 		const data = readData();
@@ -224,8 +241,12 @@
 		const priority = prompt('Prioritate (normal/urgent)', t.priority) || 'normal';
 		const teacher = prompt('Profesor (opțional)', t.teacher || '') || '';
 		const student = prompt('Nume elev', t.student || ''); if (student === null) return;
+		const addImg = prompt('Adaugă link imagine (gol pentru a păstra)', '');
 		if (!subject.trim() || !title.trim() || !due.trim() || !student.trim()) { alert('Date invalide.'); return; }
 		t.subject = subject.trim(); t.title = title.trim(); t.due = due.trim(); t.priority = priority === 'urgent' ? 'urgent' : 'normal'; t.teacher = teacher.trim(); t.student = student.trim();
+		if (addImg !== null && addImg.trim()) {
+			t.images = Array.isArray(t.images) ? [...t.images, addImg.trim()] : [addImg.trim()];
+		}
 		writeData(data); renderTeme(data);
 	}
 	function onDeleteTema(id) {
@@ -345,6 +366,94 @@
 		if (fbUnsub) { fbUnsub(); fbUnsub = null; }
 		updateFbStatus('Conectat (realtime oprit)');
 	}
+
+	// Chat constants and helpers
+	const CHAT_USER_KEY = 'clasa6b_chat_username_v1';
+	function readChatUser() { try { return localStorage.getItem(CHAT_USER_KEY) || ''; } catch { return ''; } }
+	function writeChatUser(name) { try { localStorage.setItem(CHAT_USER_KEY, name || ''); } catch {} }
+	function chatElements() {
+		return {
+			username: document.getElementById('chatUsername'),
+			saveBtn: document.getElementById('chatSaveName'),
+			messages: document.getElementById('chatMessages'),
+			form: document.getElementById('chatForm'),
+			input: document.getElementById('chatInput'),
+		};
+	}
+	let chatUnsub = null;
+	function connectChatRealtime() {
+		try {
+			const conf = (window.FB_CONF && window.FB_CONF.docPath) ? window.FB_CONF : readFbConf();
+			if (!conf?.docPath) return;
+			if (!firebase?.apps?.length) return;
+			const base = conf.docPath.split('/')[0];
+			const colRef = firebase.firestore().collection(base + '_chat');
+			if (chatUnsub) chatUnsub();
+			chatUnsub = colRef.orderBy('ts','asc').limit(200).onSnapshot((snap) => {
+				const els = chatElements(); if (!els.messages) return;
+				els.messages.innerHTML = '';
+				snap.forEach(doc => {
+					const m = doc.data();
+					const div = document.createElement('div');
+					div.className = 'chat-item';
+					div.innerHTML = `<div>${escapeHtml(m.text || '')}</div><div class="chat-meta">${escapeHtml(m.user || 'Anonim')} • ${new Date(m.ts?.toDate ? m.ts.toDate() : m.ts).toLocaleString('ro-RO')}</div>`;
+					els.messages.appendChild(div);
+				});
+				els.messages.scrollTop = els.messages.scrollHeight;
+			});
+		} catch (e) { console.error('chat realtime error', e); }
+	}
+	async function sendChatMessage(text) {
+		const user = readChatUser().trim() || 'Anonim';
+		const conf = (window.FB_CONF && window.FB_CONF.docPath) ? window.FB_CONF : readFbConf();
+		if (!firebase?.apps?.length || !conf?.docPath) { alert('Chatul nu este conectat.'); return; }
+		const base = conf.docPath.split('/')[0];
+		await firebase.firestore().collection(base + '_chat').add({
+			text: text.trim().slice(0, 1000),
+			user,
+			ts: firebase.firestore.FieldValue.serverTimestamp(),
+		});
+	}
+
+	// Chat UI bindings
+	document.addEventListener('DOMContentLoaded', () => {
+		const els = chatElements();
+		if (els.username) {
+			const saved = readChatUser();
+			if (saved) els.username.value = saved;
+			els.saveBtn?.addEventListener('click', () => {
+				const name = els.username.value.trim();
+				if (!name) { alert('Introdu un nume/username.'); return; }
+				writeChatUser(name);
+				alert('Nume salvat.');
+			});
+		}
+		if (els.form && els.input) {
+			els.form.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const name = (els.username?.value || readChatUser()).trim();
+				if (!name) { alert('Setează numele la chat înainte de a trimite.'); return; }
+				const text = els.input.value.trim();
+				if (!text) return;
+				await sendChatMessage(text);
+				els.input.value = '';
+			});
+		}
+		// connect chat realtime once Firebase is ready
+		if (firebase?.apps?.length) connectChatRealtime();
+	});
+
+	// Mobile menu toggle
+	document.addEventListener('DOMContentLoaded', () => {
+		const toggle = document.querySelector('.mobile-menu-toggle');
+		const nav = document.querySelector('.nav');
+		toggle?.addEventListener('click', () => {
+			nav?.classList.toggle('open');
+		});
+		document.querySelectorAll('.nav a').forEach(a => a.addEventListener('click', () => {
+			nav?.classList.remove('open');
+		}));
+	});
 
 	/** Init **/
 	document.addEventListener('DOMContentLoaded', () => {
