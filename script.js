@@ -381,11 +381,24 @@
 		};
 	}
 	let chatUnsub = null;
+	function ensureFirebaseInitialized() {
+		try {
+			if (firebase?.apps?.length) return true;
+			const conf = getEffectiveConf();
+			if (conf && conf.apiKey && conf.authDomain && conf.projectId) {
+				firebase.initializeApp({ apiKey: conf.apiKey, authDomain: conf.authDomain, projectId: conf.projectId });
+				return true;
+			}
+			return false;
+		} catch {
+			return false;
+		}
+	}
 	function connectChatRealtime() {
 		try {
+			if (!ensureFirebaseInitialized()) return;
 			const conf = getEffectiveConf();
 			if (!conf?.docPath) return;
-			if (!firebase?.apps?.length) return;
 			const base = conf.docPath.split('/')[0];
 			const colRef = firebase.firestore().collection(base + '_chat');
 			if (chatUnsub) chatUnsub();
@@ -405,8 +418,9 @@
 	}
 	async function sendChatMessage(text) {
 		const user = readChatUser().trim() || 'Anonim';
+		if (!ensureFirebaseInitialized()) { alert('Chatul nu este conectat (Firebase nu a fost inițializat).'); return; }
 		const conf = getEffectiveConf();
-		if (!firebase?.apps?.length || !conf?.docPath) { alert('Chatul nu este conectat.'); return; }
+		if (!conf?.docPath) { alert('Chatul nu este conectat (docPath lipsă).'); return; }
 		const base = conf.docPath.split('/')[0];
 		await firebase.firestore().collection(base + '_chat').add({
 			text: text.trim().slice(0, 1000),
